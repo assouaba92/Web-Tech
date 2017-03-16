@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Forecast Search</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script> 
+        <link rel="stylesheet" href="weather.css">
+        <script src="validation.js" type="text/javascript"></script>
+        <script src="http://openlayers.org/api/OpenLayers.js"></script>
+        <script type="text/javascript">
+            function showMap(longitude,latitude){
+            var lonlat = new OpenLayers.LonLat(longitude,latitude);
+
+            var map = new OpenLayers.Map("basicMap");
+
+            var mapnik = new OpenLayers.Layer.OSM(); 
+                
+            var layer_cloud = new OpenLayers.Layer.XYZ(
+    "clouds",
+    "http://${s}.tile.openweathermap.org/map/clouds/${z}/${x}/${y}.png",
+            {
+                isBaseLayer: false,
+                opacity: 0.3,
+                sphericalMercator: true
+            }
+        );
+
+            var layer_precipitation = new OpenLayers.Layer.XYZ(
+                "precipitation",              "http://${s}.tile.openweathermap.org/map/precipitation/${z}/${x}/${y}.png",
+                {
+                    isBaseLayer: false,
+                    opacity: 0.3,
+                    sphericalMercator: true
+                }
+            );
+
+            map.addLayers([mapnik, layer_precipitation, layer_cloud]);
+            map.setCenter(new OpenLayers.LonLat(longitude,latitude).transform('EPSG:4326', 'EPSG:3857'), 9);
+            }
+            
+            function timeSetting(t,m){ 
+                var a="";
+                if(t<0){
+                 t+=12;
+                 a=" PM";
+                 if(t<10) t= "0"+t;
+                }
+                else if(t>12 && t<24){
+                 t%=12;
+                 a=" PM";
+                 if(t<10) t= "0"+t%12; 
+                }
+                else if(t==0 || t==24){
+                 t=12;
+                 a=" AM";
+                }
+                else if(t==12){
+                 a=" PM";   
+                }
+                else if(t<12 && t>0){
+                 a=" AM";
+                  if(t<10) t= "0"+t; 
+                }
+                
+                if(m<10) m="0"+m;
+                
+                return t+":"+m+a;     
+            }
+        
+            function searchOutput(){
+                $.ajax({
+                    url: "weather.php",
+                    data: {
+                         address: $("#address").val(),
+                         city: $("#city").val(),
+                         state:  $("#state").val(),
+                         degree: $("input[type='radio']:checked:first").val()
+                    },
+                    type: "GET",
+                    success: function(data){ 
+                        try{
+                        var out=jQuery.parseJSON(data);
+                        }
+                        
+                        catch (e) {
+                        return alert(data);
+                        }
+                        $("#basicMap").text("");
+                        $("input").css("background-color","white");
+                        $("#searchOutput").css("display","block");
+                        
+                        var longitude=out.longitude;
+                        var latitude=out.latitude;
+                       
+                    if($("input[type='radio']:checked:first").val()==="us"){
+                           letter="F";
+                           windSpeedUnit=" mph";
+                           visibilityUnit=" mi";
+                           pressureUnit=" mb";
+                         }
+
+                else if($("input[type='radio']:checked:first").val()==="si"){
+                           letter="C";
+                           windSpeedUnit=" m/s";
+                           visibilityUnit=" km";
+                           pressureUnit=" hPa";
+                         }
+                        
+                        //Right Now 
+                        
+                        var icon=out.currently.icon;
+                        switch (icon) {
+                            case "clear-day":
+                                icon="clear.png";
+                                condition="Clear&nbsp;Day";
+                                break;
+                            case "clear-night":
+                                icon="clear_night.png";
+                                condition="Clear&nbsp;Night";
+                                break;
+                            case "rain":
+                                icon="rain.png";
+                                condition="Rainy";
+                                break;
+                            case "snow":
+                                icon="snow.png";
+                                condition="Snow";
+                                break;
+                            case "sleet":
+                                icon="sleet.png";
+                                condition="Sleet";
+                                break;
+                            case "wind":
+                                icon="wind.png";
+                                condition="Windy";
+                                break;
+                            case "fog":
+                                icon="fog.png";
+                                condition="Foggy";
+                                break;
+                            case "cloudy":
+                                icon="cloudy.png";
+                                condition="Cloudy";
+                                break;
+                            case "partly-cloudy-day":
+                                icon="cloud_day.png";
+                                condition="Partly&nbsp;Cloudy&nbsp;Day";
+                                break;
+                            case "partly-cloudy-night":
+                                icon="cloud_night.png";
+                                condition="Partly&nbsp;Cloudy&nbsp;Night";
+                                break;
+                            default:
+                                icon="N.A.";
+                                condition="N.A.";
+                                } 
+                        
+                        $("#header").html("<img id='iconImage' src="+icon+" alt="+condition+" title="+condition+">");
+                        
+                        var weatherCondition=out.currently.summary;
+                        var temperature=Math.round(out.currently.temperature);
+                        var lowTemp=Math.round(out.daily.data[0].temperatureMin)+"&#176;";
+                        var highTemp=Math.round(out.daily.data[0].temperatureMax)+"&#176;";
+                        
+                        var city=$("#city").val();
+                        var state=$("#state").val();
+                        var degree=$("input[type='radio']:checked:first").val();
+                        $("#header").append("<div id='rightSection'><h4>"+weatherCondition+" in "+city+", "+state+"</h4><h1><span style='font-size:200%;'>"+temperature+"</span>"+"<span id='smallDegree'>&#176; "+letter+"</span></h1>"+"<br/><span style='color:blue;'>L: "+lowTemp+"</span> | <span style='color:green;'>H: "+highTemp+"</span><img id='facebookPost' src='fb_icon.png' style='width:40px; float:right;'></div>");
+                        
+                        
+                        $("#facebookPost").click(function(e){
+                            e.preventDefault();
+                            FB.ui(
+                            {
+                            method: "feed",
+                            link: "http://forecast.io/",
+                            name: "Current Weather in "+$("#city").val()+","+$("#state").val(),
+                            picture: "http://cs-server.usc.edu:31458/hmw8/"+icon,
+                            description: condition+", "+temperature+"&#176; "+letter, 
+                            caption: "WEATHER INFORMATION FROM FORCAST.IO"
+                             },function(response)
+                             {
+                               if(!!response.post_id)
+                               {
+                                 alert("Posted Successfully");
+                               }
+                               else
+                               {
+                                 alert("Not Posted");
+                               }
+                             }
+                             );       
+                          });
+                      
+                        var precipitation=out.currently.precipIntensity;
+                        precipitation=(precipitation=="NULL"||precipitation==undefined)?"N.A.":precipitation;
+                    if($("input[type='radio']:checked:first").val()==="us"){
+                        if(precipitation>=0 && precipitation<0.002)
+                            precipitation="None";
+                        else if(precipitation>=0.002 && precipitation<0.017)
+                            precipitation="Very Light";
+                        else if(precipitation>=0.017 && precipitation<0.1)
+                            precipitation="Light";
+                        else if(precipitation>=0.1 && precipitation<0.4)
+                            precipitation="Moderate";
+                        else if(precipitation>=0.4)
+                            precipitation="Heavy";
+                    }
+                    
+                else if($("input[type='radio']:checked:first").val()==="si"){
+                        if(precipitation>=0 && precipitation<0.0508)
+                            precipitation="None";
+                        else if(precipitation>=0.0508 && precipitation<0.4318)
+                            precipitation="Very Light";
+                        else if(precipitation>=0.4318 && precipitation<2.54)
+                            precipitation="Light";
+                        else if(precipitation>=2.54 && precipitation<10.16)
+                            precipitation="Moderate";
+                        else if(precipitation>=10.16)
+                            precipitation="Heavy"; 
+                         }
+                        
+                        $("#precipitation").html(precipitation);
+                        
+                        var rain=Math.round(out.currently.precipProbability*100);
+                        rain=(rain=="NULL"||rain==undefined)?"N.A.":rain+"%";
+                        $("#rain").html(rain);
+                        
+                    var wind=Math.round(out.currently.windSpeed*100)/100;
+                        wind=(wind=="NULL"||wind==undefined)?"N.A.":wind+windSpeedUnit;
+                        $("#wind").html(wind);
+                        
+                        var dew=Math.round(out.currently.dewPoint*100)/100;
+                        dew=(dew=="NULL"||dew==undefined)?"N.A.":dew+"&#176; "+letter;
+                        $("#dew").html(dew);
+                        
+                        var humidity=Math.round(out.currently.humidity*100);
+                        humidity=(humidity=="NULL"||humidity==undefined)?"N.A.":humidity+"%";
+                        $("#humidity").html(humidity);
+                                        var visibility=Math.round(out.currently.visibility*100)/100;
+                        visibility=(visibility=="NULL"||visibility==undefined)?"N.A.":visibility+visibilityUnit;
+                        $("#visibility").html(visibility);
+                
+                        
+                        var sunriseNow = new Date(out.daily.data[0].sunriseTime*1000);
+                        var sunriseHours = sunriseNow.getUTCHours()+out.offset;
+                        var sunriseMinutes = sunriseNow.getUTCMinutes();                             $("#sunrise").html(timeSetting(sunriseHours,sunriseMinutes));
+                        
+                        var sunsetNow = new Date(out.daily.data[0].sunsetTime*1000);
+                        var sunsetHours = sunsetNow.getUTCHours()+out.offset;;
+                        var sunsetMinutes = sunsetNow.getUTCMinutes();                          $("#sunset").html(timeSetting(sunsetHours,sunsetMinutes));
+                        
+                        showMap(longitude,latitude);
+                        
+                        //Next 24 hours                        
+                        $("#temp").html("Temp\(&#176;"+letter+"\)");
+                        
+                        for (var i=0 ; i<24; i++){
+                        var nextTime = new Date(out.hourly.data[i].time*1000);
+                        var nextHours=nextTime.getUTCHours()+out.offset;
+                        var nextMinutes = 0;                          
+    
+                        var hourlyIcon=out.hourly.data[i].icon;
+                         switch (hourlyIcon) {
+                            case "clear-day":
+                                hourlyIcon="clear.png";
+                                break;
+                            case "clear-night":
+                                hourlyIcon="clear_night.png";
+                                break;
+                            case "rain":
+                                hourlyIcon="rain.png";
+                                break;
+                            case "snow":
+                                hourlyIcon="snow.png";
+                                break;
+                            case "sleet":
+                                hourlyIcon="sleet.png";
+                                break;
+                            case "wind":
+                                hourlyIcon="wind.png";
+                                break;
+                            case "fog":
+                                hourlyIcon="fog.png";
+                                break;
+                            case "cloudy":
+                                hourlyIcon="cloudy.png";
+                                break;
+                            case "partly-cloudy-day":
+                                hourlyIcon="cloud_day.png";
+                                break;
+                            case "partly-cloudy-night":
+                                hourlyIcon="cloud_night.png";
+                                break;
+                            default:
+                                hourlyIcon="N.A.";
+                                } 
+                            
+                var cloudCover=Math.round(out.hourly.data[i].cloudCover*100);
+                cloudCover=(cloudCover=="NULL"||cloudCover==undefined)?"N.A.":cloudCover+"%";
+            
+                var hourlyTemperature=out.hourly.data[i].temperature;                         hourlyTemperature=(hourlyTemperature=="NULL"||hourlyTemperature==undefined)?"N.A.":hourlyTemperature;
+                        
+             var hourlyWind=out.hourly.data[i].windSpeed;
+             hourlyWind=(hourlyWind=="NULL"||hourlyWind==undefined)?"N.A.":hourlyWind+windSpeedUnit;                
+                    
+             var hourlyHumidity=Math.round(out.hourly.data[i].humidity*100);
+             hourlyHumidity=(hourlyHumidity=="NULL"||hourlyHumidity==undefined)?"N.A.":hourlyHumidity+"%";
+                            
+             var hourlyVisibility=out.hourly.data[i].visibility;
+             hourlyVisibility=(hourlyVisibility=="NULL"||hourlyVisibility==undefined)?"N.A.":hourlyVisibility+visibilityUnit;
+                            
+             var hourlyPressure=out.hourly.data[i].pressure;
+             hourlyPressure=(hourlyPressure=="NULL"||hourlyPressure==undefined)?"N.A.":hourlyPressure+pressureUnit;
+                         
+                        $("#hourTable").append("<tr id='hour"+(i+1)+"'><td>"+timeSetting(nextHours+1,nextMinutes)+"</td><td><img src="+hourlyIcon+" style='width:40px;'></td><td>"+cloudCover+"</td><td>"+hourlyTemperature+"</td><td role='tab' id='detailCell'><span data-toggle='collapse' data-parent='#hourTable' href='#details"+(i+1)+"' aria-expanded='true' aria-controls='details"+(i+1)+"' class='glyphicon glyphicon-plus  text-primary btn' aria-hidden='true'></span></td><tr id='details"+(i+1)+"' class='collapse grey' role='tabpanel' aria-labelledby='detailCell'><td class='well' colspan='5'><div class='popup'><table class='panel-body table text-center' style='width:85%; margin-left:7%;'><tr><th class='col-xs-6 col-sm-3 text-center'>Wind</th><th class='col-xs-6 col-sm-3 text-center'>Humidity</th><th class='col-xs-6 col-sm-3 text-center'>Visibility</th><th class='col-xs-6 col-sm-3 text-center'>Pressure</th></tr><tr class='well' style='border:none;'><td class='text-center'>"+hourlyWind+"</td><td class='text-center'>"+hourlyHumidity+"</td><td class='text-center'>"+hourlyVisibility+"</td><td class='text-center'>"+hourlyPressure+"</td></tr></table></div></td></tr>");
+                        
+                        }
+                        
+                        //Next 7 days
+                        
+                        for(var i=1; i<=7; i++){
+                        $("#day"+i).text("");
+                         var nextDate=new Date(out.daily.data[i].time*1000-out.offset*3600*1000);
+                          var sunriseNext = new Date(out.daily.data[i].sunriseTime*1000);
+                        var sunriseNextHours = sunriseNext.getUTCHours()+out.offset;
+                        var sunriseNextMinutes = sunriseNext.getUTCMinutes(); 
+                            
+                         var sunsetNext = new Date(out.daily.data[i].sunsetTime*1000);
+                        var sunsetNextHours = sunsetNext.getUTCHours()+out.offset;
+                        var sunsetNextMinutes = sunsetNext.getUTCMinutes(); 
+                            
+                         var nextDay=nextDate.getUTCDay();
+                         switch (nextDay) {
+                            case 0:
+                               nextDay="Sunday";
+                                break;
+                            case 1:
+                               nextDay="Monday";
+                                break;
+                            case 2:
+                               nextDay="Tuesday";
+                                break;
+                            case 3:
+                               nextDay="Wednesday";
+                                break;
+                            case 4:
+                               nextDay="Thursday";
+                                break;
+                            case 5:
+                               nextDay="Friday";
+                                break;   
+                             case 6:
+                                 nextDay="Saturday";
+                                 break;
+                             default:
+                                 nextDay="N.A.";
+                         }
+                        
+                         var months = new Array();
+                        months[0] = "Jan";
+                        months[1] = "Feb";
+                        months[2] = "Mar";
+                        months[3] = "Apr";
+                        months[4] = "May";
+                        months[5] = "Jun";
+                        months[6] = "Jul";
+                        months[7] = "Aug";
+                        months[8] = "Sep";
+                        months[9] = "Oct";
+                        months[10] = "Nov";
+                        months[11] = "Dec";    
+                        var month=months[nextDate.getUTCMonth()];
+                        month=(month=="NULL"||month==undefined)?"N.A.":month;    
+                            
+                        var dailyIcon=out.daily.data[i].icon;
+                        switch (dailyIcon) {
+                            case "clear-day":
+                                dailyIcon="clear.png";
+                                break;
+                            case "clear-night":
+                                dailyIcon="clear_night.png";
+                                break;
+                            case "rain":
+                                dailyIcon="rain.png";
+                                break;
+                            case "snow":
+                                dailyIcon="snow.png";
+                                break;
+                            case "sleet":
+                                dailyIcon="sleet.png";
+                                break;
+                            case "wind":
+                                dailyIcon="wind.png";
+                                break;
+                            case "fog":
+                                dailyIcon="fog.png";
+                                break;
+                            case "cloudy":
+                                dailyIcon="cloudy.png";
+                                break;
+                            case "partly-cloudy-day":
+                                dailyIcon="cloud_day.png";
+                                break;
+                            case "partly-cloudy-night":
+                                dailyIcon="cloud_night.png";
+                                break;
+                            default:
+                                dailyIcon="N.A.";
+                                } 
+                            var minTemp=Math.round(out.daily.data[i].temperatureMin);
+                            minTemp=(minTemp=="NULL"||minTemp==undefined)?"N.A.":minTemp+"&#176;";
+                            
+                         var maxTemp=Math.round(out.daily.data[i].temperatureMax);
+                         maxTemp=(maxTemp=="NULL"||maxTemp==undefined)?"N.A.":maxTemp+"&#176;";   
+                                                     
+                         $("#day"+i).html("<h5>"+nextDay+"<br/>"+month+" "+nextDate.getUTCDate()+"</h5><img class='text-center' src="+dailyIcon+" style='width:70px;'><h5>Min<br/>Temp</h5><h2>"+minTemp+"</h2><h5>Max<br/>Temp</h5><h2>"+maxTemp+"</h2>");
+                                                    
+                        //Modal Display
+                        var dailyHumidity=Math.round(out.daily.data[i].humidity*100);    
+                        dailyHumidity=(dailyHumidity=="NULL"||dailyHumidity==undefined)?"N.A.":dailyHumidity+"%";  
+                        
+                        var dailyWindSpeed=out.daily.data[i].windSpeed;
+                        dailyWindSpeed=(dailyWindSpeed=="NULL"||dailyWindSpeed==undefined)?"N.A.":dailyWindSpeed+windSpeedUnit; 
+                            
+                        var dailyVisibility=out.daily.data[i].visibility;    
+                        dailyVisibility=(dailyVisibility=="NULL"||dailyVisibility==undefined)?"N.A.":dailyVisibility+visibilityUnit; 
+                            
+                        var dailyPressure=out.daily.data[i].pressure;    
+                        dailyPressure=(dailyPressure=="NULL"||dailyPressure==undefined)?"N.A.":dailyPressure+pressureUnit; 
+                        
+                        $("#later").append("<div id='myModal"+i+"' class='modal fade' role='dialog'><div class='modal-dialog'><div class='modal-content'><div class='modal-header'><button type='button' class='close' data-dismiss='modal'>&times;</button><h4 class='modal-title'>Weather in "+city+" on "+month+" "+nextDate.getUTCDate()+"</h4></div><div class='modal-body' style='text-align:center;'><img src="+dailyIcon+" style='width:120px;'><h3>"+nextDay+": <span class='text-warning'>"+out.daily.data[i].summary+"</span></h3><div class='row-fluid'><div class='inline1'><h4>Sunrise Time</h4>"+timeSetting(sunriseNextHours,sunriseNextMinutes)+"</div><div class='inline2'><h4>Sunset Time</h4>"+timeSetting(sunsetNextHours,sunsetNextMinutes)+"</div><div class='inline3'><h4>Humidity</h4>"+dailyHumidity+"</div></div><div class='row-fluid'><div class='inline1'><h4>Wind Speed</h4>"+dailyWindSpeed+"</div><div class='inline2'><h4>Visibility</h4>"+dailyVisibility+"</div><div class='inline3'><h4>Pressure</h4>"+dailyPressure+"</div></div></div><div class='modal-footer'><button type='button' class='btn btn-default' data-dismiss='modal'>Close</button></div></div></div></div>");
+                        
+                        }
+                    },
+                    error: function(data){
+                        alert("An error ocurred!");
+                    },
+                });   
+                return false;
+            }            
+        </script>
+    </head>
+   
+    <body>
+        <script>
+          window.fbAsyncInit = function() {
+            FB.init({
+              appId      : '1528532224144120',
+              xfbml      : true,
+              version    : 'v2.5'
+            });
+          };
+
+          (function(d, s, id){
+             var js, fjs = d.getElementsByTagName(s)[0];
+             if (d.getElementById(id)) {return;}
+             js = d.createElement(s); js.id = id;
+             js.src = "//connect.facebook.net/en_US/sdk.js";
+             fjs.parentNode.insertBefore(js, fjs);
+           }(document, 'script', 'facebook-jssdk'));
+        </script>
+        
+        <h2 class="text-center">Forecast Search</h2>
+        
+        <div class="panel">
+       <div class="panel-body">
+        <form class="form-inline" role="form" id="weatherForm" method="GET" onsubmit="return searchOutput()" >
+            <div class="row">
+            <div class="form-group">
+                <label for="address">Street Address:<span class="text-danger">*</span></label><br/>
+                <input type="text" class="form-control span9" id="address" name="address" placeholder="Enter street address" >
+            </div>
+
+            <div class="form-group">
+                <label for="city">City:<span class="text-danger">*</span></label><br/>
+                <input type="text" class="form-control" id="city" name="city" placeholder="Enter the city name">
+            </div>
+
+            <div class="form-group">
+                <label for="state">State:<span class="text-danger">*</span></label><br/>
+                <select id="state" name="state" class="form-control">
+                <option selected="selected" value="">Select your state...</option>
+                <option value="AL">Alabama</option>
+                <option value="AK">Alaska</option>
+                <option value="AZ">Arizona</option>
+                <option value="AR">Arkansas</option>
+                <option value="CA">California</option>
+                <option value="CO">Colorado</option>
+                <option value="CT">Connecticut</option>
+                <option value="DE">Delaware</option>
+                <option value="DC">District Of Columbia</option>
+                <option value="FL">Florida</option>
+                <option value="GA">Georgia</option>
+                <option value="HI">Hawaii</option>
+                <option value="ID">Idaho</option>
+                <option value="IL">Illinois</option>
+                <option value="IN">Indiana</option>
+                <option value="IA">Iowa</option>
+                <option value="KS">Kansas</option>
+                <option value="KY">Kentucky</option>
+                <option value="LA">Louisiana</option>
+                <option value="ME">Maine</option>
+                <option value="MD">Maryland</option>
+                <option value="MA">Massachusetts</option>
+                <option value="MI">Michigan</option>
+                <option value="MN">Minnesota</option>
+                <option value="MS">Mississippi</option>
+                <option value="MO">Missouri</option>
+                <option value="MT">Montana</option>
+                <option value="NE">Nebraska</option>
+                <option value="NV">Nevada</option>
+                <option value="NH">New Hampshire</option>
+                <option value="NJ">New Jersey</option>
+                <option value="NM">New Mexico</option>
+                <option value="NY">New York</option>
+                <option value="NC">North Carolina</option>
+                <option value="ND">North Dakota</option>
+                <option value="OH">Ohio</option>
+                <option value="OK">Oklahoma</option>
+                <option value="OR">Oregon</option>
+                <option value="PA">Pennsylvania</option>
+                <option value="RI">Rhode Island</option>
+                <option value="SC">South Carolina</option>
+                <option value="SD">South Dakota</option>
+                <option value="TN">Tennessee</option>
+                <option value="TX">Texas</option>
+                <option value="UT">Utah</option>
+                <option value="VT">Vermont</option>
+                <option value="VA">Virginia</option>
+                <option value="WA">Washington</option>
+                <option value="WV">West Virginia</option>
+                <option value="WI">Wisconsin</option>
+                <option value="WY">Wyoming</option> 
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="degree">Degree:<span class="text-danger">*</span></label><br/>
+                <label class="radio-inline"><input type="radio" name="degree" value="us" checked>Fahrenheit</label>
+                <label class="radio-inline"><input type="radio" name="degree" value="si">Celsius</label>
+            </div>
+
+            <div class="form-group pull-right">  
+                <button id="search" type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span>Search</button>
+
+                <button id="clear" type="reset" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span>Clear</button><br/>  
+            </div>
+            </div>
+            
+            <div class="row">
+            <div class="form-group pull-right">
+            <label for="forecast">Powered by:<a href="http://forecast.io/"><img src="forecast_logo.png" width="100px" height="70px"></a></label>
+            </div>
+            </div>
+        </form>  
+            </div>
+        </div>
+        <hr>
+        
+        
+        <div id="searchOutput">
+            <div id="weatherTabs">
+                <ul class="nav nav-pills">
+                  <li class="active"><a id="firstTab" data-toggle="pill" href="#now">Right Now</a></li>
+                  <li><a data-toggle="pill" href="#soon">Next 24 Hours</a></li>
+                  <li><a data-toggle="pill" href="#later">Next 7 Days</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-content">
+                <div id="now" class="tab-pane fade in active">
+                    <table class="table table-responsive" id="todayTable">
+                        <tr class="btn-danger"><td id="header" colspan="2"></td></tr>
+                        <tr class="btn-default"><td>Precipitation</td><td id="precipitation"></td></tr>
+                        <tr class="danger"><td>Chance of Rain</td><td id="rain"></td></tr>
+                        <tr class="btn-default"><td>Wind Speed</td><td id="wind"></td></tr>
+                        <tr class="danger"><td>Dew Point</td><td id="dew"></td></tr>
+                        <tr class="btn-default"><td>Humidity</td><td id="humidity"></td></tr>
+                        <tr class="danger"><td>Visibility</td><td id="visibility"></td></tr>
+                        <tr class="btn-default"><td >Sunrise</td><td id="sunrise"></td></tr>
+                        <tr class="danger"><td>Sunset</td><td id="sunset"></td></tr>
+                    </table>
+                    <div id="basicMap"></div>
+                </div>
+                    
+                <div id="soon" class="tab-pane fade">
+                    <table class="table text-center panel-group" id="hourTable" role="tablist" aria-multiselectable="true">
+                        <tr class="bg-primary"><th class="text-center" id="time">Time</th><th class="text-center" id="summary">Summary</th><th class="text-center" id="cloudCover">Cloud Cover</th><th class="text-center" id="temp"><span id="headerLetter"</th><th class="text-center" id="details">View Details</th></tr>
+                    </table> 
+                </div>
+
+                <div id="later" class="tab-pane fade"> 
+                    <div class="row nopadding">
+                        <div id="area">
+                            <div class="col-sm-2"></div>
+                            <div class="col-sm-1 well-sm text-center" class="btn btn-primary" data-toggle="modal" data-target="#myModal1" id="day1"></div>
+                            <div class="col-sm-1 well-sm text-center"  class="btn btn-danger" data-toggle="modal" data-target="#myModal2" id="day2"></div>
+                            <div class="col-sm-1 well-sm text-center" class="btn btn-warning" data-toggle="modal" data-target="#myModal3" id="day3"></div>
+                            <div class="col-sm-1 well-sm text-center" class="btn" data-toggle="modal" data-target="#myModal4" id="day4"></div>
+                            <div class="col-sm-1 well-sm text-center" class="btn" data-toggle="modal" data-target="#myModal5" id="day5"></div>
+                            <div class="col-sm-1 well-sm text-center" class="btn" data-toggle="modal" data-target="#myModal6" id="day6"></div>
+                            <div class="col-sm-1 well-sm text-center" class="btn" data-toggle="modal" data-target="#myModal7" id="day7"></div>
+                        
+                         <div class="col-sm-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+        </div>        
+      </div>
+      <br/>
+    </body>
+</html>

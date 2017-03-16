@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Workbook>
+  <Table>
+   <Header>
+    <Data>Network</Data>
+    <Data>Owner</Data>
+    <Data>Feeds</Data>
+    <Data>Notes</Data>
+    <Data>HomePage</Data>
+    <Data>Logo</Data>
+   </Header>
+   <Row>
+    <Network>AMC</Network>
+    <Owner>AMC Networks</Owner>
+    <Feeds>
+        <Feed>AMC East</Feed>
+        <Feed>AMC On Demand</Feed>
+    </Feeds>
+    <Notes> formerly American Movie Classics (English) and (Spanish) audio feed </Notes>
+    <HomePage>http://www.amctv.com/</HomePage>
+    <Logo>amclogo.png</Logo>
+   </Row>
+   <Row>
+   </Row>
+</Table>
+</Workbook>

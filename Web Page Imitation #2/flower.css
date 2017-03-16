@@ -1,0 +1,90 @@
+body{
+ margin-top: 0;
+ background-image: url(background.png);
+ background-size: 100% 105%;
+}
+
+table{
+ margin: 0 auto;   
+}
+
+table, tr, td{
+ border-collapse: collapse;   
+}
+
+h2{
+ color:#cca300;
+ margin-bottom: 0;
+}
+
+h3{
+ margin-top: 0;   
+}
+
+#siteNote{
+ color:#665200;
+}
+
+#flower td{
+ background-image: url(main.jpg);
+ background-size: 95% 100%; 
+ background-repeat: no-repeat;
+ padding-top: 20%;
+ padding-left: 65%;
+ padding-bottom: 5%;
+ background-position: center;
+}
+
+a{
+ color: black;
+ text-decoration: none;
+}
+
+#menu{
+ background-image: url(menu.png); 
+ background-size: 100% 100%; 
+ height: 60px;
+}
+
+#menu td{
+ font-weight: bold;
+ padding-bottom: 20px;
+ text-align: center;  
+}
+
+p{
+ font-size: 11px; 
+ margin-top: 0;
+}
+
+h4{
+ margin-bottom: 0;  
+}
+
+span{
+ color:#ffdb4d; 
+}
+
+.signature{ 
+ text-align: center;
+}
+
+.signature a{
+  color: #e6b800;   
+}
+
+#by{
+ color: black;
+}
+
+#description h3, #description p, #description h4{ 
+ margin-left: 3%;
+ margin-right: 3%;
+}
+
+#description{
+ background-color: white;
+ border-left: 35px solid;  
+ border-right: 35px solid;
+ border-color: rgb(255,255,230);
+}

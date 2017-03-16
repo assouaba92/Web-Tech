@@ -1,0 +1,207 @@
+<!DOCTYPE HTML>
+
+<html>
+  <head>
+    <title>Cable Network Company Query Page</title>
+     <style>         
+        input{
+         margin-top: 20px;   
+        }
+         
+        body{
+         margin-top: 100px;
+         text-align: center;
+        }
+     </style>
+      
+     <script type="text/javascript">    
+      var xmlDoc;
+      function viewXML(what){
+          var URL=what.URL.value;
+          if(!URL)
+           alert("Please fill out the form!");
+        
+          else{
+          function loadXML(url) {
+          if (window.XMLHttpRequest){
+              xmlhttp=new XMLHttpRequest();//IE7+,Firefox,Chrome,Opera,Safari
+          }
+          else{//IE6, IE5
+              xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+          }
+          xmlhttp.open("GET",url,false);
+          xmlhttp.send();
+          if (xmlhttp.status != 404){
+          xmlDoc=xmlhttp.responseXML;
+          return xmlDoc;}
+          else{
+          alert("File does not exist!");
+          }
+          }
+          
+          xmlDoc=loadXML(URL);         
+              
+          if (window.ActiveXObject)//if IE, simply execute script 
+          {  
+            if (xmlDoc.parseError.errorCode != 0) {
+                var myErr = xmlDoc.parseError;
+                generateError(xmlDoc);
+                hWin = window.open("", "Error", "height=300,width=340");
+                hWin.document.write(html_text);
+            } 
+            else 
+            {  
+                generateHTML(xmlDoc);
+                hWin = window.open("", "Homework4", "height=600,width=800");
+                hWin.document.write(html_text);   
+            }
+          } 
+          else //else if FF, execute script once XML object has loaded
+          { 
+            if (xmlDoc.documentElement.nodeName=="parsererror")
+            {
+                alert("Error in XML File!");
+                return(null);
+            }
+            else
+            {
+                xmlDoc.onload=generateHTML(xmlDoc);
+                hWin = window.open("", "Homework4",         "scrollbars=1,height=600,width=800");
+                hWin.document.write(html_text);
+            }
+          }
+          hWin.document.close();  
+          }
+      }
+       
+      function generateHTML(xmlDoc){  
+        ELEMENT_NODE = 1; 
+        root=xmlDoc.DocumentElement;
+        html_text="<html><head><title>XML Parse Result</title>";
+            
+        headers=xmlDoc.getElementsByTagName("Header");
+        headerNodeList=headers.item(0).childNodes;
+        networks=xmlDoc.getElementsByTagName("Row");
+        if(networks.length==0)
+        {
+         html_text+="</head><body onload=alert('Empty&nbsp;Network&nbsp;List!')>";
+         html_text+="<table border='2'>"; 
+         html_text+="</table>";
+         html_text+="</bo"+"dy></html>";  
+        }
+         
+        else{
+        html_text+="</head><body>";
+        html_text+="<table border='2'>";
+        networkNodeList=networks.item(0).childNodes;
+        html_text+="<tbody>";
+        html_text+="<tr>";
+        x=0;  y=0;
+	    
+        // output the headers
+        for(i=0;i<headerNodeList.length;i++)
+        {  
+          if(headerNodeList.item(i).nodeType==ELEMENT_NODE){                             header=headerNodeList.item(i).firstChild.nodeValue;
+			html_text+="<th>"+header+"</th>";  
+            }   
+        }
+        html_text+="</tr>";
+           
+        // output out the values
+        for(i=0;i<networks.length;i++) //do for all networks
+        {  
+            networkNodeList=networks.item(i).childNodes;
+            html_text+="<tr>";  
+            for(j=0;j<networkNodeList.length;j++)
+            {  
+              if(networkNodeList.item(j).nodeType==ELEMENT_NODE)
+			  {
+                if(networkNodeList.item(j).nodeName=="Feeds")
+				{
+                 networkFeedList=networkNodeList.item(j).childNodes;
+                 html_text+="<td><ul>"; 
+                 
+                 for(k=0;k<networkFeedList.length;k++)
+                 {
+                   if(networkFeedList.item(k).nodeType==ELEMENT_NODE)
+			       { 
+                     if(networkFeedList.item(k).nodeName=="Feed")
+				     {
+                        if(networkFeedList.item(k).firstChild==null)
+                        {
+                        html_text+="";
+                        }
+                        else{
+                        html_text+="<li>"+networkFeedList.item(k).firstChild.nodeValue+"</li>";
+                        }
+                     }
+                   }
+                 }  
+                 html_text+="</ul></td>";
+                }
+                
+                else if(networkNodeList.item(j).nodeName=="HomePage")
+				{
+                 if(networkNodeList.item(j).firstChild==null)
+                 {
+                   html_text+="<td></td>";
+                 }
+                 else{
+			     html_text+="<td><a    href="+networkNodeList.item(j).firstChild.nodeValue+">"+networkNodeList.item(j).firstChild.nodeValue+"</a></td>"; 
+                 }
+                }  
+                  
+			    else if(networkNodeList.item(j).nodeName=="Logo")
+				{
+                 if(networkNodeList.item(j).firstChild==null)
+                 {
+                   html_text+="<td></td>";
+                 }
+                 else{
+			     html_text+="<td><img    src="+networkNodeList.item(j).firstChild.nodeValue+"></td>"; 
+                 }
+                }
+                
+		        else 
+                {
+                 if(networkNodeList.item(j).firstChild==null)
+                 {
+                   html_text+="<td></td>";
+                 }
+                 else{
+                 html_text+="   <td>"+networkNodeList.item(j).firstChild.nodeValue+"</td>";
+                 }
+		        }   
+              }    
+            }
+            html_text+="</tr>";  
+        }
+        html_text+="</tbody>";  
+        html_text+="</table>";
+        html_text+="</bo"+"dy></html>";  
+        }
+      }
+</script>
+      
+      
+     </script>
+  </head>
+    
+  <body>
+    Enter URL for Company List XML File
+    <form name="myform" method="POST" id="location">
+      <input type="text" name="URL" maxlength="255" /><br/>
+      <input type="button" name="submit" value="Submit Query" onClick="viewXML(this.form)" />
+    </form>
+    <br/>
+    Files for Testing:<br/><br/>
+    networklist.xml<br/>
+    empty.xml<br/>  
+    emptyData.xml<br/>
+    emptyFeeds.xml<br/>
+    emptyRow.xml<br/>
+    headerProblem.xml<br/>
+      
+  <noscript>
+  </body>
+</html>
